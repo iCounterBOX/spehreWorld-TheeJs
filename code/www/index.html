@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html>
+<!--
+  * Copyright © 2012-2015, Intel Corporation. All rights reserved.
+  * Please see the included README.md file for license terms and conditions.
+
+  Copyright © 2015, byKristina. All rights reserved.
+  -->
+
+<head>
+   
+    <meta charset="UTF-8">
+    <title>sphereWORL</title>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+
+    <!-- <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1"> -->
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=no">
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, minimum-scale=1, maximum-scale=2"> -->
+
+    <style>
+        /* following three (cascaded) are equivalent to above three meta viewport statements */
+        /* see http://www.quirksmode.org/blog/archives/2014/05/html5_dev_conf.html */
+        /* see http://dev.w3.org/csswg/css-device-adapt/ */
+
+        @-ms-viewport {
+            width: 100vw;
+            min-zoom: 100%;
+            zoom: 100%;
+        }
+
+        @viewport {
+            width: 100vw;
+            min-zoom: 100% zoom: 100%;
+        }
+
+        @-ms-viewport {
+            user-zoom: fixed;
+            min-zoom: 100%;
+        }
+
+        @viewport {
+            user-zoom: fixed;
+            min-zoom: 100%;
+        }
+        /*@-ms-viewport { user-zoom: zoom ; min-zoom: 100% ; max-zoom: 200% ; }   @viewport { user-zoom: zoom ; min-zoom: 100% ; max-zoom: 200% ; }*/
+    </style>
+
+  
+
+      
+
+    <script src="js/three.min.js"></script>
+
+    <script type="application/javascript" src="js/jquery.min.js"></script>
+    <script type="application/javascript" src="js/jquery.mobile-min.js" data-ver="0"></script>
+
+    <script src="js/FirstPersonControlsCK.js"></script>
+    <script src="js/Detector.js"></script>
+    <script src="js/Stats.js"></script>
+
+    <script src="js/splineCK.js"></script>
+
+    <script src="js/canvasKartusche.js"></script>
+    <script src="js/canvasHelm.js"></script>
+
+    <script src="js/threex.rendererstats.js"></script>
+
+    <!-- load fonts  placed AFTER the THREE libs
+
+    <script src="fonts/gentilis_bold.typeface.js"></script>
+    <script src="fonts/gentilis_regular.typeface.js"></script>
+    <script src="fonts/optimer_bold.typeface.js"></script>
+    <script src="fonts/optimer_regular.typeface.js"></script>
+    <script src="fonts/helvetiker_bold.typeface.js"></script>
+    <script src="fonts/helvetiker_regular.typeface.js"></script>
+    -->
+    <script src="fonts/droid_sans_regular.typeface.js"></script>
+
+    <!-- load fonts  placed AFTER the THREE libs
+    <script src="fonts/droid_sans_bold.typeface.js"></script>
+    <script src="fonts/droid_serif_regular.typeface.js"></script>
+    <script src="fonts/droid_serif_bold.typeface.js"></script>
+
+    <script src="fonts/celtic_(plain).typeface.js"></script>
+
+    <script src="fonts/kells_uncial_bold.typeface.js"></script>
+    <script src="fonts/dk_northumbria_regular.typeface.js"></script>
+    <script src="fonts/leipzig_fraktur_bold_regular.typeface.js"></script>
+    <script src="fonts/meroitic_-_hieroglyphics_regular.typeface.js"></script>
+    <script src="fonts/uncial_antiqua_regular.typeface.js"></script>
+-->
+
+
+    <!--[if lt IE 9]>
+        <script type="text/javascript" src="js/html5.js"></script>
+        <link rel="stylesheet" href="css/ie.css" type="text/css" media="all">
+        <![endif]-->
+    <!--[if lt IE 7]>
+            <div style=' clear: both; text-align:center; position: relative;'>
+                <a href="http://windows.microsoft.com/en-US/internet-explorer/products/ie/home?ocid=ie6_countdown_bannercode"><img src="http://storage.ie6countdown.com/assets/100/images/banners/warning_bar_0000_us.jpg" border="0" height="42" width="820" alt="You are using an outdated browser. For a faster, safer browsing experience, upgrade for free today." /></a>
+            </div>
+        <![endif]-->
+
+    <style type="text/css">
+        .layerStyle {
+            padding: 0px;
+            margin: 0px;
+            overflow: hidden;
+            position: relative;
+            background-color: transparent;
+            font-size: xx-small;
+            color: #0000FF;
+            table-layout: auto;
+        }
+    </style>
+
+    <!-- MY PART END -->
+
+    <script type="application/javascript" src="js/index_user_scripts.js"></script>
+</head>
+
+<body oncontextmenu="return false" style="overflow: hidden">
+
+    <script>
+        // MAIN
+        window.onload = function () {
+            SiteIsCompletelyLoaded()
+        }
+
+        var iT = 0;
+        var myVar = setInterval(function () {
+            myTimer()
+        }, 1);
+
+        var onDeviceReady = function () {                          // called when Cordova is ready
+            if (window.Cordova && navigator.splashscreen) {     // Cordova API detected
+                navigator.splashscreen.hide();                 // hide splash screen
+            }
+        };
+
+
+        // standard global variables
+        var container_c, scene_c, camera_c, cubeCamera_c, renderer_c, controls,
+            stats;
+        var loader;
+        var rendererStats = new THREEx.RendererStats();
+        var objects = []; // store the objects which will be selectable! is used in FirstPersonControl
+        var plane; // see FirstPersonControl ( we click and move the object to the NEW position )
+
+        // lights
+
+
+        var cubeLight_c;
+        var cubeLight2;
+        var cubeAmbientLight_c;
+
+
+        // for the SPHERE control
+
+        var sphereMaterialPicture = ""; // to store the last updated sphere! avoid flicker effect on canvas due to unneccessary update the scene_c
+
+
+        // for flight control and SPLINE
+
+        var step_c;
+        step = 0;
+        var circleStep = 0;
+        var clock = new THREE.Clock();
+        var travelledRatio_c; // spline
+        travelledRatio_c = 0;
+        var itravelledRatio_c; // for the innerSpline
+        itravelledRatio_c = 0;
+        var selectedSpline_c;
+        var splineCK_c;
+
+
+        // to Drag and move my object
+        var raycaster = new THREE.Raycaster();
+        var mouseR = new THREE.Vector2(),
+            offsetR = new THREE.Vector3(),
+            INTERSECTED, SELECTED;
+        var hullpassed = false;
+        var inSphere = false;
+        var themeFlight = true; // start with the themes
+        var astraFlight = false; // will switch in the FlipFlop
+
+        // custom global variables
+
+
+        // the Objects
+        var camCube;
+      
+		var sphere=[];			// we have several spheres ( 0 -7 )...we place them in a little loop		
+        var textObj1;
+        var mirrorCube;
+        var flyCube;
+        var meshKartusche_c; // CANVAS element
+        var meshHelm_c; // CANVAS element
+        var jsonMesh_c;
+
+        var collidableMeshList = [];
+
+        var themeSphereDimension = 40000;
+        var skySphereDimension = 1000000;
+		var orbitDistance = 3000;
+
+		// material für das aussenGrid
+		var sphereMaterial = new THREE.MeshBasicMaterial({
+                color: 0x8D00C4,
+                wireframe: false,
+                wireframeLinewidth: 0.1,
+                transparent: true,
+                opacity: 0.3
+                    //side: THREE.BackSide
+            });
+			
+        // GUI
+
+        var fov = 70,
+            far = 3000000,
+            isUserInteracting = false,
+            onMouseDownMouseX = 0,
+            onMouseDownMouseY = 0,
+            lon = 0,
+            onMouseDownLon = 0,
+            lat = 0,
+            onMouseDownLat = 0,
+            phi = 0,
+            theta = 0;
+
+
+        // 2 move the stone ..
+
+        var previousTime = new Date().getTime();
+        var currentTime;
+        var delta;
+
+
+        // This is Just the little UFO - made with Ai  CANVAS2HTML
+        var matPolyFront = "textures/grave256.png";
+
+
+        var browserName = navigator.appName;
+
+        var isIE = false;
+        if (navigator.userAgent.indexOf('MSIE') !== -1 || navigator.appVersion.indexOf('Trident/') > 0) {
+            isIE = true;
+        }
+
+
+        // make webgl compatible
+
+        var hasWebgl = (function () {
+            try {
+                return !!window.WebGLRenderingContext && !!
+                    document.createElement('canvas').getContext(
+                        'c1');
+            } catch (e) {
+                return false;
+            }
+        })();
+
+
+// we have several spheres ( 0 -7 )...we place them in a little loop
+
+function createSphereMesh(i,randomNr) {
+		
+	var spherePic = 'textures/sphere2/pic'+randomNr+'.jpg';	
+	sphere[i] = new THREE.Mesh(
+                new THREE.SphereGeometry(themeSphereDimension, 60, 40),
+                new THREE.MeshBasicMaterial({
+                    map: THREE.ImageUtils.loadTexture(spherePic)
+                })
+            );
+    scene_c.add(sphere[i]);
+    sphere[i].scale.x = -1; // to be inside the sphere
+    sphere[i].name = "sphere"+i;
+                //objects.push(sphere0);
+    splineCK_c.addSphere2Array(sphere[i]);
+    collidableMeshList.push(sphere[i]);
+
+    var sphereCollusionGrid = new THREE.Mesh(new THREE.SphereGeometry(themeSphereDimension + orbitDistance, 16, 16), sphereMaterial);
+    //sphereCollusionGrid.scale.x = -1;
+    sphereCollusionGrid.name = "hull"+i;
+    scene_c.add(sphereCollusionGrid);
+    collidableMeshList.push(sphereCollusionGrid);	
+	
+	console.log("sphere-Nr." + i + " : " + "pic"+randomNr+".jpg" );
+}
+
+// selectNr: zahlenspanne zb 7 ( 0..7 )
+// radomLimit: zb. 20  wenn wir insgesamt 20 bilder haben
+function getRandomNumberBetween(selectNr, randomLimit){
+
+	var arr = [];
+	while(arr.length < selectNr){
+		var randomnumber = Math.ceil(Math.random()*randomLimit)
+		if(arr.indexOf(randomnumber) > -1) continue;
+		arr[arr.length] = randomnumber;
+	}	
+	return arr;
+}
+
+        function init() {
+
+            // scene_c
+            scene_c = new THREE.Scene();
+            splineCK_c = new splineCK(skySphereDimension);
+
+            // camera_c
+            camera_c = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 1, far);
+            splineCam = new THREE.PerspectiveCamera(fov, window.innerWidth / window.innerHeight, 1, far);
+
+            scene_c.add(camera_c);
+            scene_c.add(splineCam);
+
+            // S K Y   B O X     T H E   S P A C E    A cube Frame for the WORLDSspheres
+
+            var imagePrefix = "textures/sky2/skybox-";
+            var directions = ["xpos", "xneg", "ypos", "yneg", "zpos", "zneg"];
+            var imageSuffix = ".jpg";
+
+			//***********************
+			var ANZAHL_WELTEN=8;
+			//***********************
+			
+            var materialArray = [];
+            for (var i = 0; i < ANZAHL_WELTEN; i++)
+                materialArray.push(new THREE.MeshBasicMaterial({
+                    map: THREE.ImageUtils.loadTexture(imagePrefix + directions[i] + imageSuffix),
+                    side: THREE.BackSide
+                }));
+
+            var skyGeometry = new THREE.BoxGeometry(skySphereDimension, skySphereDimension, skySphereDimension);
+            var skyMaterial = new THREE.MeshFaceMaterial(materialArray);
+            var skyBox = new THREE.Mesh(skyGeometry, skyMaterial);
+            //skyBox.rotation.x += Math.PI / 2;
+            scene_c.add(skyBox);
+
+            // SPERE SCHALEN-Welten    SPHERE DEFINITION AEREA 
+
+            // now the theme spheres:  WIR brauchen 20 Bilder im ORDNER !!!
+			// Das design sieht 7 SPHEREs vor  ( 0...6 )  !! ACHTUNG prüfen wie viele bilder im folder sind !! bei 18 bildern zB: 	getRandomNumberBetween(8, 18);	
+						
+			var randomNrArr = getRandomNumberBetween(10, 18);			// gibt 8 verschiedene zahlen von 18 zurück		
+			for (var i = 0; i != ANZAHL_WELTEN; ++i ) {	
+				createSphereMesh(i,randomNrArr[i]);				
+			}			
+
+            // END OF SPERE DEFINITION
+
+            // Render THIS
+
+            renderer_c = new THREE.WebGLRenderer({
+                antialias: true
+            });
+            renderer_c.setSize(window.innerWidth, window.innerHeight);
+            renderer_c.sortObjects = false;
+            renderer_c.shadowMapEnabled = true;
+            renderer_c.shadowMapType = THREE.PCFShadowMap;
+
+            container_c = document.getElementById('c1');
+            container_c.appendChild(renderer_c.domElement);
+
+            // my flight controls
+
+            controls = new THREE.FirstPersonControls(camera_c, renderer_c.domElement, container_c, camera_c);
+            controls.movementSpeed = 1000;
+            controls.lookSpeed = 0.125;
+            controls.lookVertical = true;
+            controls.constrainVertical = true;
+            controls.verticalMin = 1.1;
+            controls.verticalMax = 2.2;
+
+
+            // STATS
+            stats = new Stats();
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.bottom = '0px';
+            stats.domElement.style.zIndex = 100;
+            container_c.appendChild(stats.domElement);
+
+            rendererStats.domElement.style.position = 'absolute'
+            rendererStats.domElement.style.left = '0px'
+            rendererStats.domElement.style.bottom = '300px'
+            container_c.appendChild(rendererStats.domElement);
+
+            // attention  due to the fact that i made the cube bigger and the the complet scen (spherSpace  i also had to adapt this cam
+            cubeCamera_c = new THREE.CubeCamera(1, 500000, 1056);
+            cubeCamera_c.renderTarget.minFilter = THREE.LinearMipMapLinearFilter;
+            scene_c.add(cubeCamera_c);
+
+            // LIGHT from helpers site
+            cubeLight_c = new THREE.PointLight(0xffffff);
+            scene_c.add(cubeLight_c);
+
+            cubeLight2 = new THREE.PointLight(0xffffff);
+            scene_c.add(cubeLight2);
+
+            // add subtle ambient lighting
+            var ambiColor = "#0c0c0c";
+            cubeAmbientLight_c = new THREE.AmbientLight(ambiColor);
+            scene_c.add(cubeAmbientLight_c);
+
+            //Text Object TEXT
+            var textLabel = "www.steinplus.com";
+
+            var text3d = new THREE.TextGeometry(textLabel, {
+                size: 1000,
+                height: 200,
+                curveSegments: 20,
+                font: "droid sans"
+            });
+            text3d.computeBoundingBox();
+            var centerOffset = -0.5 * (text3d.boundingBox.max.x - text3d.boundingBox.min.x);
+            var textMaterial = new THREE.MeshBasicMaterial({
+                color: Math.random() * 0xffffff,
+                overdraw: 0.5
+            });
+            textObj1 = new THREE.Mesh(text3d, textMaterial);
+            textObj1.name = "www.steinplus.com";
+            scene_c.add(textObj1);
+
+
+
+
+            // Fly - BOX  FLYcube
+
+            var geometry = new THREE.BoxGeometry(10, 10, 10);
+            var material = new THREE.MeshBasicMaterial({
+                //wireframe: true,
+                color: 0x00ff00
+            });
+            flyCube = new THREE.Mesh(geometry, material);
+            scene_c.add(flyCube);
+
+
+            ////////////
+            // CUSTOM //
+            ////////////
+
+            // Mirror cube -!! we have to take CubeGeometry  NOT BoxGeometry
+
+            var mirrorCubeGeometry = new THREE.BoxGeometry(3000, 3000, 3000);
+            var mirrorMaterial = new THREE.MeshBasicMaterial({
+                envMap: cubeCamera_c.renderTarget,
+                morphTargets: true
+            });
+            // construct 8 blend shapes
+
+            for (var i = 0; i < mirrorCubeGeometry.vertices.length; i++) {
+                var vertices = [];
+                for (var v = 0; v < mirrorCubeGeometry.vertices.length; v++) {
+                    vertices.push(mirrorCubeGeometry.vertices[v].clone());
+                    if (v === i) {
+                        vertices[vertices.length - 1].x *= 2;
+                        vertices[vertices.length - 1].y *= 2;
+                        vertices[vertices.length - 1].z *= 2;
+                    }
+                }
+                mirrorCubeGeometry.morphTargets.push({
+                    name: "target" + i,
+                    vertices: vertices
+                });
+            }
+            mirrorCube = new THREE.Mesh(mirrorCubeGeometry, mirrorMaterial);
+            scene_c.add(mirrorCube);
+
+            // end of mirror cube
+
+
+            // POLYGONE
+
+            var materialPolyFront = new THREE.MeshBasicMaterial({
+                envMap: getTexture(matPolyFront)
+
+            });
+
+            var materialPolySide = new THREE.MeshBasicMaterial({
+                envMap: getTexture(
+                    "textures/grave256.png")
+            });
+
+            var ctx = new THREE.Shape(); // From http://blog.burlock.org/html5/130-paths
+
+
+            //---- GRAPHICS
+
+            ctx.moveTo(6.5, 59.0);
+            ctx.bezierCurveTo(6.5, 59.0, -5.7, 68.6, 4.7, 58.5);
+            ctx.bezierCurveTo(15.1, 48.5, 3.0, 55.9, 15.1, 48.5);
+            ctx.bezierCurveTo(27.1, 41.0, 40.0, 35.3, 40.0, 35.3);
+            ctx.lineTo(54.6, 30.4);
+            ctx.lineTo(79.7, 25.3);
+            ctx.lineTo(85.3, 24.3);
+            ctx.lineTo(90.2, 14.0);
+            ctx.lineTo(98.2, 7.0);
+            ctx.lineTo(109.0, 2.1);
+            ctx.lineTo(119.3, 0.5);
+            ctx.lineTo(133.8, 0.8);
+            ctx.lineTo(140.9, 2.5);
+            ctx.lineTo(148.0, 3.8);
+            ctx.lineTo(164.7, 17.8);
+            ctx.lineTo(167.1, 24.2);
+            ctx.lineTo(185.0, 27.0);
+            ctx.lineTo(204.6, 31.8);
+            ctx.lineTo(229.7, 42.0);
+            ctx.lineTo(250.5, 58.9);
+            ctx.lineTo(238.9, 65.4);
+            ctx.lineTo(218.4, 73.5);
+            ctx.lineTo(197.6, 79.1);
+            ctx.lineTo(177.8, 82.8);
+            ctx.lineTo(164.7, 83.6);
+            ctx.lineTo(139.8, 96.2);
+            ctx.lineTo(121.0, 97.7);
+            ctx.lineTo(110.8, 97.4);
+            ctx.lineTo(96.1, 90.5);
+            ctx.lineTo(89.6, 84.2);
+            ctx.lineTo(81.3, 81.3);
+            ctx.lineTo(59.7, 77.4);
+            ctx.lineTo(39.5, 72.7);
+            ctx.lineTo(6.5, 59.0);
+
+
+            // ---END GRAPHICS
+
+
+            // end Ai copyAndPaste
+
+            var extrusionSettings = {
+                amount: 20,
+                size: 2,
+                height: 1,
+                curveSegments: 3,
+                bevelThickness: 1,
+                bevelSize: 1,
+                bevelEnabled: true,
+                material: 0,
+                extrudeMaterial: 1
+            };
+
+            // we extract the Points to get ALL the single points of this GEOMETRY!
+
+            var offset = 1;
+
+            myStone = makeMyExtrudeGeo(offset, ctx,
+                materialPolyFront, materialPolySide,
+                extrusionSettings);
+
+            myStone.name = "myStone";
+
+            myStone.scale.set(50, 50, 50);
+            scene_c.add(myStone);
+
+            // Ai Object is placed in scene via CANVAS and mesh  method
+
+            // create a canvas element
+
+
+            var canvas4Kartusche = document.getElementById("canvasAI");
+            var ctxKartusche = canvas4Kartusche.getContext('2d');
+
+            //kartusche(ctxKartusche); // this Method JS is drawing the kartusche onto CANVAS
+
+            // canvas contents will be used for a texture
+            var texture1 = new THREE.Texture(canvas4Kartusche)
+            texture1.needsUpdate = true;
+
+            var material1 = new THREE.MeshBasicMaterial({
+                map: texture1,
+                side: THREE.DoubleSide
+            });
+            material1.transparent = true;
+            // Was not exact the picture size  !!new THREE.PlaneGeometry(canvas4Kartusche.width, canvas4Kartusche.height),
+            meshKartusche_c = new THREE.Mesh(
+                new THREE.PlaneBufferGeometry(400, 400),
+                material1
+            );
+            meshKartusche_c.position.set(0, 50, 0);
+            meshKartusche_c.scale.set(80, 80, 80);
+            scene_c.add(meshKartusche_c);
+
+            //var canvas4Helm= document.createElement('canvas');
+            var canvas4Helm = document.getElementById("canvasHelm");
+            var ctxHelm = canvas4Helm.getContext('2d');
+
+            helm(ctxHelm); // this drawing the kartusche
+
+            // canvas contents will be used for a texture
+            var texture1 = new THREE.Texture(canvas4Helm)
+            texture1.needsUpdate = true;
+
+            var material1 = new THREE.MeshBasicMaterial({
+                map: texture1,
+                side: THREE.DoubleSide
+            });
+            material1.transparent = true;
+
+            // Was not exact the picture size  !!new THREE.PlaneGeometry(canvas4Kartusche.width, canvas4Kartusche.height),
+            meshHelm_c = new THREE.Mesh(
+                new THREE.PlaneBufferGeometry(400, 400),
+                material1
+            );
+            meshHelm_c.position.set(0, 50, 0);
+            meshHelm_c.scale.set(60, 60, 60);
+            scene_c.add(meshHelm_c);
+           
+
+
+            // some EVENT listening
+
+            //document.addEventListener('DOMMouseScroll', onDocumentMouseWheel, false);
+
+            var mousewheelevt = (/Firefox/i.test(navigator.userAgent)) ? "DOMMouseScroll" : "mousewheel" //FF doesn't recognize mousewheel as of FF3.x
+
+            if (document.attachEvent) //if IE (and Opera depending on user setting)
+                document.attachEvent("on" + mousewheelevt, onDocumentMouseWheel)
+            else if (document.addEventListener) //WC3 browsers
+                document.addEventListener(mousewheelevt, onDocumentMouseWheel, false)
+
+
+            window.addEventListener('resize', onWindowResized, false);
+
+
+            splineCK_c.setSpherePositionOnSplineCircle(10, themeSphereDimension, scene_c);
+            // SeT WITH THIS POINTS THE GEOMETRY
+            scene_c.add(splineCK_c.generateTHEspline("images/blue_particle.jpg"));
+
+            var spl = splineCK_c.createAstraSpline(0, 0, 0, 20, skySphereDimension, "images/blue_particle.jpg");
+            spl.name = "chaosSpline"; // a chaos spline for a crazy flight
+            scene_c.add(spl);
+
+
+            onWindowResized(null);
+
+            //  $("#c1").drawTouch();
+
+        }
+
+
+
+
+
+        // issue : we get the CANVAS coordinates !
+        // Left upper corner X/Y is o..so we have to convert this into the vector
+        // Coordinate system X/y with  0 in lower left corner.
+        // its not a must have ..but for me its more conveniant
+
+        function makeMyExtrudeGeo(offset, ctx, matFront, matSide, extrusionSettings) {
+            var shapePoints = ctx.extractAllPoints();
+            var converterPts = [];
+
+
+            for (i = 0; i < shapePoints.shape.length; i++) {
+                converterPts.push(new THREE.Vector2(shapePoints.shape[i].x, offset - shapePoints.shape[i].y));
+            }
+
+            var convertedShape = new THREE.Shape(converterPts);
+
+            var g3 = new THREE.ExtrudeGeometry(convertedShape,
+                extrusionSettings);
+
+            var materialArray = [matFront, matSide];
+            var stoneMaterial = new THREE.MeshFaceMaterial(
+                materialArray);
+
+            var mesh = new THREE.Mesh(g3, stoneMaterial);
+
+            //mesh.position.x = 70;
+            return mesh;
+        }
+
+        function getTexture(picture) {
+            //var texture = THREE.ImageUtils.loadTexture(picture);
+            var texture = cubeCamera_c.renderTarget
+            texture.repeat.set(0.01, 0.01);
+            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+            texture.anisotropy = 10;
+            texture.needsUpdate = true;
+            texture.magFilter = THREE.NearestFilter;
+            texture.minFilter = THREE.LinearMipMapLinearFilter;
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+
+        // http://codetheory.in/controlling-the-frame-rate-with-requestanimationframe/
+
+        function animate() {
+
+            requestAnimationFrame(animate);
+
+            stats.update();
+            rendererStats.update(renderer_c);
+            render();
+
+
+        }
+
+
+
+
+        function render() {
+
+            circleStep += 0.01;
+            var xr = 30000; // radius of circle
+            var yr = 1000; // relative height of the sliderSystem
+            var zr = 20000; // slider depth  e.g. circle or elyptic  -- equals xr if a circle
+            var rota = 0.04; // const
+            var len = 5; //  e.g. 2 objects
+            var alpha = (Math.PI * 2 / len);
+
+            // flyCube along the  Spline
+
+
+            if (travelledRatio_c > (1 - 0.030)) {
+                travelledRatio_c = 0;
+                if (astraFlight == true) { // flipFlop to switch between the splines
+                    astraFlight = false;
+                    themeFlight = true;
+                } else {
+                    astraFlight = true;
+                    themeFlight = false;
+                }
+            }
+
+            if (themeFlight == true) {
+                var spline = splineCK_c.getSpline(); // flight through the theme spheres
+            }
+
+            if (astraFlight == true) {
+                var spline = splineCK_c.getAstraSpline(); // the flight within the Space
+            }
+
+            var p1 = spline.getPointAt(travelledRatio_c);
+            var p2 = spline.getPointAt(travelledRatio_c + 0.001);
+            var p3 = spline.getPointAt(travelledRatio_c + 0.030);
+
+
+
+            // Kreisbahn
+            step += 0.01; // For the mirrorCube  e.g step += 0.01;
+            //mirrorCube.position.set(p3.x + 10 + (1000 * (Math.cos(step * 2))), p3.y + 20 + (1000 * (Math.cos(step * 2))), p3.z);
+
+
+
+            cubeLight_c.position.set(p1.x, p1.y, p1.z);
+            cubeLight2.position.set(p1.x + 300, p1.y - 400, p1.z + 300);
+            cubeAmbientLight_c.position.set(p1.x, p1.y - 200, p1.z);
+            cubeCamera_c.position.set(mirrorCube.position.x + 800, mirrorCube.position.y + 400, mirrorCube.position.z + 500);
+
+            flyCube.position.set(p1.x, p1.y, p1.z);
+
+            myStone.position.set(p3.x + 10 - (2000 * (Math.cos(step * 3))), p3.y + 70 + (1 * (Math.cos(step))), p3.z + 20 - (200 * (Math.cos(step))));
+
+            // KreisbahnObjekt 1
+
+            mirrorCube.position.x = p3.x - Math.floor(Math.cos(circleStep + (alpha * 1)) * xr);
+            mirrorCube.position.z = p3.z - Math.floor(Math.sin(circleStep + (alpha * 1)) * zr);
+            mirrorCube.position.y = p3.y + yr;
+            mirrorCube.rotation.x += rota; // eigenrotation
+            mirrorCube.rotation.y += rota;
+
+            // KreisbahnObjekt 2
+
+            textObj1.position.x = p3.x + Math.floor(Math.cos(circleStep + (alpha * 2)) * xr + 20000);
+            textObj1.position.y = p3.y + yr + 5000;
+            textObj1.position.z = p3.z - Math.floor(Math.sin(circleStep + (alpha * 2)) * zr + 20000);
+            //textObj1.rotation.x += rota;
+            textObj1.rotation.y += rota;
+
+            // KreisbahnObjekt 3
+
+            meshKartusche_c.position.x = p3.x + Math.floor(Math.cos(circleStep + (alpha * 3)) * xr + 8000);
+            meshKartusche_c.position.y = p3.y + yr + 5000;
+            meshKartusche_c.position.z = p3.z - Math.floor(Math.sin(circleStep + (alpha * 3)) * zr + 8000);
+            //meshKartusche_c.rotation.x += rota; // eigenrotation
+            meshKartusche_c.rotation.y += rota;
+
+            // KreisbahnObjekt 4
+
+            meshHelm_c.position.x = p3.x + Math.floor(Math.cos(circleStep + (alpha * 4)) * xr + 8000);
+            meshHelm_c.position.y = p3.y + yr + 5000;
+            meshHelm_c.position.z = p3.z - Math.floor(Math.sin(circleStep + (alpha * 4)) * zr + 8000);
+            meshHelm_c.rotation.y += rota;
+
+            // KreisbahnObjekt 5
+/*
+die sphere sieht aus wie eine gelbe sonne?  muss ich noch mal basteln
+
+            if (jsonMesh_c) {
+                jsonMesh_c.position.x = p3.x + Math.floor(Math.cos(circleStep + (alpha * 5)) * xr + 8000);
+                jsonMesh_c.position.y = p3.y + yr + 5000;
+                jsonMesh_c.position.z = p3.z - Math.floor(Math.sin(circleStep + (alpha * 5)) * zr + 8000);
+                jsonMesh_c.rotation.y += rota;
+            }
+
+*/
+
+
+            camera_c.position.set(p1.x, p1.y, p1.z);
+
+            if (inSphere == true) {
+
+                travelledRatio_c += 0.00010;
+                //camera_c.rotation.x += rota; // eigenrotation
+                camera_c.rotation.y += 0.007;
+            } else {
+                travelledRatio_c += 0.00060; // as higher the more flight speed
+                camera_c.lookAt(new THREE.Vector3(p2.x, p2.y, p2.z));
+
+            }
+
+
+
+
+            // the polygon
+
+            //myStone.position.x = 30 + (75 * (Math.cos(step)));
+            //myStone.position.z = 45 + (70 * (Math.sin(step)));
+
+            // important for the mirror effect
+            cubeCamera_c.updateCubeMap(renderer_c, scene_c);
+
+            controls.update(clock.getDelta());
+            collisionDetection();
+
+
+            document.getElementById("winInnerWH").innerHTML = "Width=" + window.innerWidth + " Height=" + window.innerHeight;
+            document.getElementById("camXYZ").innerHTML = "x=" + Math.floor(camera_c.position.x) + " y=" + Math.floor(camera_c.position.y) + " z=" + Math.floor(camera_c.position.z);
+            document.getElementById("camFAR").innerHTML = far;
+            document.getElementById("camFov").innerHTML = fov;
+            document.getElementById("mirrorCubeXYZ").innerHTML = "x=" + Math.floor(mirrorCube.position.x) + " y=" + Math.floor(mirrorCube.position.y) + " z=" + Math.floor(mirrorCube.position.z);
+            document.getElementById("SplineTravelRatio").innerHTML = travelledRatio_c;
+
+
+            renderer_c.render(scene_c, camera_c);
+
+        }
+
+        function collisionDetection() {
+
+            // collision detection:
+            //   determines if any of the rays from the cube's origin to each vertex
+            //        intersects any face of a mesh in the array of target meshes
+            //   for increased collision accuracy, add more vertices to the cube;
+            //        for example, new THREE.CubeGeometry( 64, 64, 64, 8, 8, 8, wireMaterial )
+            //   HOWEVER: when the origin of the ray is within the target mesh, collisions do not occur
+            var originPoint = flyCube.position.clone();
+
+
+            for (var vertexIndex = 0; vertexIndex < flyCube.geometry.vertices.length; vertexIndex++) {
+                var localVertex = flyCube.geometry.vertices[vertexIndex].clone();
+                var globalVertex = localVertex.applyMatrix4(flyCube.matrix);
+                var directionVector = globalVertex.sub(flyCube.position);
+
+                var ray = new THREE.Raycaster(originPoint, directionVector.clone().normalize());
+                var collisionResults = ray.intersectObjects(collidableMeshList);
+                if (collisionResults.length > 0 && collisionResults[0].distance < directionVector.length()) {
+                    console.log("collisionResults.length: " + collisionResults.length + " colliResDistance: " + collisionResults[0].distance + "directionVector.length() =" + directionVector.length());
+
+                }
+                //lab
+                var intersects = ray.intersectObjects(scene_c.children);
+
+                // INTERSECTED = the object in the scene_c currently closest to the camera_c
+                //        and intersected by the Ray projected from the mouse position
+
+                // if there is one (or more) intersections
+                if (intersects.length > 0) {
+                    // if the closest object intersected is not the currently stored intersection object
+                    if (intersects[0].object != INTERSECTED) {
+
+                        if (intersects[0].object.name.length > 0) {
+                            console.log("object: " + intersects[0].object.name);
+                            currentlySelected = intersects[0].object.name;
+                            selectedSpline_c = scene_c.getObjectByName("spline0"); //Store spline object for the camera_c
+
+                            var objectName = intersects[0].object.name;
+                            var len = objectName.indexOf("hull");
+                            if (objectName.indexOf("hull") != -1) hullpassed = true;
+                            if (hullpassed == true && objectName.indexOf("sphere") != -1) {
+                                inSphere = true; //
+                                console.log("we fly within sphere");
+                            }
+                            if (inSphere == true && objectName.indexOf("hull") != -1) {
+                                console.log("Space Flight");
+                                inSphere = false;
+                                hullpassed = false;
+                            }
+
+
+                            flyCube.material.color.setHex(Math.random() * 0xffffff);
+                            if (currentlySelected.indexOf("sphere0") != -1) {
+
+                                console.log("Raytracer selection ObjectName: " + intersects[0].object.name);
+                                // for later Use !!  changeInfoImage("textures/infoReinigung.png");
+                            }
+
+                        }
+                        // restore previous intersection object (if it exists) to its original color
+                        if (INTERSECTED) {
+                            //                        INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
+
+                        }
+
+                        // store reference to closest object as current intersection object
+                        INTERSECTED = intersects[0].object;
+                        // store color of closest object (for later restoration)
+                        ////   INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
+                        // set a new color for closest object
+                        //        INTERSECTED.material.color.setHex(0xffff00);
+                    }
+                } else // there are no intersections
+                {
+                    // restore previous intersection object (if it exists) to its original color
+                    //if (INTERSECTED) {;
+                    //INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
+                    //}
+                    // remove previous intersection object reference
+                    //     by setting current intersection object to "nothing"
+                    INTERSECTED = null;
+                }
+                // end lab
+
+            }
+        }
+
+
+
+
+        function onWindowResized(event) {
+
+            renderer_c.setSize(window.innerWidth, window.innerHeight);
+            camera_c.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, far);
+            controls.handleResize();
+        }
+
+        function onDocumentMouseDown(event) {
+            // THIS is now handled in PersonControl!!
+        }
+
+        function onDocumentMouseMove(event) {
+            // THIS is now handled in PersonControl!!
+        }
+
+        function onDocumentMouseUp(event) {
+            // THIS is now handled in PersonControl!!
+        }
+
+        function onDocumentMouseWheel(event) {
+
+            // WebKit
+
+            if (event.wheelDeltaY) {
+
+                fov -= event.wheelDeltaY * 0.05;
+
+                // Opera / Explorer 9
+
+            } else if (event.wheelDelta) {
+
+                fov -= event.wheelDelta * 0.05;
+
+                // Firefox
+
+            } else if (event.detail) {
+
+                fov += event.detail * 1.0;
+
+            }
+
+            camera_c.projectionMatrix.makePerspective(fov, window.innerWidth / window.innerHeight, 1, far);
+
+            controls.enabled = false;
+
+
+        }
+
+
+        function barProgres2(cnt) {
+            var $bar = $('.progress-bar');
+
+            $bar.width($bar.width() + cnt);
+
+            var w = $bar.width();
+            $bar.text(cnt + "ms");
+        }
+
+
+
+        function myTimer() {
+            //var d = new Date();
+            ++iT;
+            barProgres2(iT);
+            //document.getElementById("demo").innerHTML = d.toLocaleTimeString();
+        }
+
+        function SiteIsCompletelyLoaded() {
+            clearInterval(myVar);
+            var $bar = $('.progress-bar');
+            $bar.width(200);
+            $bar.text("pageLoadTime(ms) = " + iT);
+        }
+
+
+
+        $(document).on("pagecreate", "#mainpage", function () {
+
+
+            // Position of the stone within the CANVAS THREE webGL
+
+
+
+        });
+
+
+        $(window).bind("load", function () {
+
+
+            // scene_c and CO
+
+            init();
+            animate();
+
+            // -------------------------------------------------------------------------------------------------------------------
+
+        });
+
+
+
+
+        // this section is used to enable the MouseEVENTS AGAIN after disable them in the GUIdat Menu!!
+        $.fn.drawTouch = function () {
+            var start = function (e) {
+                e = e.originalEvent;
+                if (e.touches.length === 1) {
+                    document.addEventListener('mousedown',
+                        onDocumentMouseDown, false);
+                }
+
+            };
+            var move = function (e) {
+                e.preventDefault();
+                e = e.originalEvent;
+                if (e.touches.length === 1) {
+                    document.addEventListener('mousedown',
+                        onDocumentMouseDown, false);
+                }
+            };
+            var click = function (e) {
+                e.preventDefault();
+                e = e.originalEvent;
+                document.addEventListener('mousedown',
+                    onDocumentMouseDown, false);
+            };
+            $(this).on("touchstart", start);
+            $(this).on("touchmove", move);
+            $(this).on("click", click);
+        };
+    </script>
+    <canvas id="canvasHelm" style="display: none;" width="500" height="500"></canvas>
+    <canvas id="canvasAI" style="display: none;" width="500" height="500"></canvas>
+    <div id="c1" style="position: absolute;  z-index: 1; left: 0px; top: 0px;"></div>
+    <div id="InfoLayer" style="position: fixed; width: 203px; height: 150px; z-index: 6; left: 0px;  bottom: 100px;" class="layerStyle">
+        <div>
+            <table class="layerStyle" style="width: 100%">
+                <tbody>
+                    <tr>
+                        <td>winInner</td>
+                        <td id="winInnerWH">width=1000 height=3000</td>
+                    </tr>
+                    <tr>
+                        <td>CAM</td>
+                        <td id="camXYZ">x=1000 y2000 z=3000</td>
+                    </tr>
+                    <tr>
+                        <td>CAM fov</td>
+                        <td id="camFov">75</td>
+                    </tr>
+                    <tr>
+                        <td>CAM far</td>
+                        <td id="camFAR">10000</td>
+                    </tr>
+                    <tr>
+                        <td>MirrorCubePos</td>
+                        <td id="mirrorCubeXYZ">x= y= z=</td>
+                    </tr>
+                    <tr>
+                        <td>CamCubePos</td>
+                        <td id="camCubeXYZ">x= y= z=</td>
+                    </tr>
+                    <tr>
+                        <td>CamCubeSize</td>
+                        <td id="camCubeSIZE">x= y= z=</td>
+                    </tr>
+                    <tr>
+                        <td>SplineTravelRatio</td>
+                        <td id="SplineTravelRatio">x= y= z=</td>
+                    </tr>
+
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+    <div id="InfoLayer2" style="position: fixed; width: 203px; height: 50px; z-index: 7; left: 0px;  bottom: 50px;">
+        <div>
+
+            <div class="progress full-width-widget widget uib_w_45 d-margins progBarWidth progressBarSetting1" data-uib="twitter%20bootstrap/progress_bar" data-ver="1">
+                <div class="progress-bar progress-bar-info progress-bar-danger" style="width: 0%;"></div>
+            </div>
+
+
+        </div>
+    </div>
+
+    
+    
+</body>
+
+</html>
